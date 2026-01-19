@@ -5,9 +5,9 @@ name: Tests
     branches:
       - main
   pull_request:
-  schedule:
-    # Run tests every Monday at 9:17 to catch regressions.
-    - cron: "17 9 * * 1"
+  # schedule:
+  #   # Run tests every Monday at 9:17 to catch regressions.
+  #   - cron: "17 9 * * 1"
 
 concurrency:
   # Group workflow jobs so new commits cancels in-progress execution triggered by previous commits. Source:
@@ -80,23 +80,23 @@ jobs:
           uv run -- gha-utils --version
       - name: Check launchable dev CLI
         run: |
-          uvx    --from git+https://github.com/kdeldycke/workflows -- gha-utils --version
-          uv run --with git+https://github.com/kdeldycke/workflows -- gha-utils --version
+          uvx    --from git+https://github.com/slickag/mpm-workflows -- gha-utils --version
+          uv run --with git+https://github.com/slickag/mpm-workflows -- gha-utils --version
 
       - name: Unittests
         run: |
           uv --no-progress run --frozen -- pytest
 
-      - name: Codecov - coverage
-        uses: codecov/codecov-action@v5.5.2
-        with:
-          report_type: coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Codecov - test results
-        uses: codecov/codecov-action@v5.5.2
-        with:
-          report_type: test_results
-          token: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Codecov - coverage
+      #   uses: codecov/codecov-action@v5.5.2
+      #   with:
+      #     report_type: coverage
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Codecov - test results
+      #   uses: codecov/codecov-action@v5.5.2
+      #   with:
+      #     report_type: test_results
+      #     token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Self-tests against test plan
         run: |
@@ -116,7 +116,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: >
           uvx
-          --with-requirements https://raw.githubusercontent.com/kdeldycke/workflows/main/requirements/gha-utils.txt
+          --with-requirements https://raw.githubusercontent.com/slickag/mpm-workflows/main/requirements/gha-utils.txt
           --
           gha-utils metadata --overwrite "$GITHUB_OUTPUT"
 

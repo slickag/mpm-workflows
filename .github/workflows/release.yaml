@@ -3,9 +3,9 @@ name: Build & release
 # Read https://github.com/actions/runner/issues/491 for insights on complex workflow execution logic.
 "on":
   workflow_call:
-    secrets:
-      PYPI_TOKEN:
-        required: false
+    # secrets:
+    #   PYPI_TOKEN:
+    #     required: false
     inputs:
       unstable-targets:
         description: List of unstable targets on which the build should be attempted but not fatal
@@ -92,7 +92,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: >
           uvx
-          --with-requirements https://raw.githubusercontent.com/kdeldycke/workflows/main/requirements/gha-utils.txt
+          --with-requirements https://raw.githubusercontent.com/slickag/mpm-workflows/main/requirements/gha-utils.txt
           --
           gha-utils metadata
           ${{ inputs.unstable-targets != null && format('--unstable-targets "{0}"', inputs.unstable-targets) || '' }}
@@ -143,7 +143,7 @@ jobs:
       - name: Install Nuitka
         run: >
           uv --no-progress pip install
-          --requirement https://raw.githubusercontent.com/kdeldycke/workflows/main/requirements/nuitka.txt
+          --requirement https://raw.githubusercontent.com/slickag/mpm-workflows/main/requirements/nuitka.txt
       - name: Nuitka + compilers versions
         run: |
           uv --no-progress run --frozen -- nuitka --version
@@ -278,7 +278,7 @@ jobs:
       - name: Run test plan for binary
         run: >
           uvx
-          --with-requirements https://raw.githubusercontent.com/kdeldycke/workflows/main/requirements/gha-utils.txt
+          --with-requirements https://raw.githubusercontent.com/slickag/mpm-workflows/main/requirements/gha-utils.txt
           --
           gha-utils test-plan
           ${{ inputs.timeout != null && format('--timeout {0}', inputs.timeout) || '' }}
@@ -303,7 +303,7 @@ jobs:
           # any other workflows that use `on.push.tags` triggers. See:
           # https://stackoverflow.com/questions/60963759/use-github-actions-to-create-a-tag-but-not-a-release#comment135891921_64479344
           # https://github.com/orgs/community/discussions/27028
-          token: ${{ secrets.WORKFLOW_UPDATE_GITHUB_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check if tag exists
         id: tag_exists
         run: |
@@ -317,36 +317,36 @@ jobs:
           git tag "v${{ matrix.current_version }}" "${{ matrix.commit }}"
           git push origin "v${{ matrix.current_version }}"
 
-  pypi-publish:
-    name: Publish to PyPi
-    needs:
-      - project-metadata
-      - package-build
-      - git-tag
-    if: needs.project-metadata.outputs.package_name
-    strategy:
-      matrix: ${{ fromJSON(needs.project-metadata.outputs.release_commits_matrix) }}
-    runs-on: ubuntu-slim
-    permissions:
-      # Allow GitHub's OIDC provider to create a JSON Web Token:
-      # https://github.blog/changelog/2023-06-15-github-actions-securing-openid-connect-oidc-token-permissions-in-reusable-workflows/
-      # https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings
-      id-token: write
-      attestations: write
-    steps:
-      - uses: astral-sh/setup-uv@v7.2.0
-      - name: Download build artifacts
-        uses: actions/download-artifact@v7.0.0
-        id: download
-        with:
-          name: ${{ github.event.repository.name }}-${{ matrix.short_sha }}
-      - name: Generate attestations
-        uses: actions/attest-build-provenance@v3.1.0
-        with:
-          subject-path: "${{ steps.download.outputs.download-path }}/*"
-      - name: Push to PyPi
-        run: |
-          uv --no-progress publish --token "${{ secrets.PYPI_TOKEN }}" "${{ steps.download.outputs.download-path }}/*"
+  # pypi-publish:
+  #   name: Publish to PyPi
+  #   needs:
+  #     - project-metadata
+  #     - package-build
+  #     - git-tag
+  #   if: needs.project-metadata.outputs.package_name
+  #   strategy:
+  #     matrix: ${{ fromJSON(needs.project-metadata.outputs.release_commits_matrix) }}
+  #   runs-on: ubuntu-slim
+  #   permissions:
+  #     # Allow GitHub's OIDC provider to create a JSON Web Token:
+  #     # https://github.blog/changelog/2023-06-15-github-actions-securing-openid-connect-oidc-token-permissions-in-reusable-workflows/
+  #     # https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect#adding-permissions-settings
+  #     id-token: write
+  #     attestations: write
+  #   steps:
+  #     - uses: astral-sh/setup-uv@v7.2.0
+  #     - name: Download build artifacts
+  #       uses: actions/download-artifact@v7.0.0
+  #       id: download
+  #       with:
+  #         name: ${{ github.event.repository.name }}-${{ matrix.short_sha }}
+  #     - name: Generate attestations
+  #       uses: actions/attest-build-provenance@v3.1.0
+  #       with:
+  #         subject-path: "${{ steps.download.outputs.download-path }}/*"
+  #     - name: Push to PyPi
+  #       run: |
+  #         uv --no-progress publish --token "${{ secrets.PYPI_TOKEN }}" "${{ steps.download.outputs.download-path }}/*"
 
   github-release:
     name: Publish GitHub release
@@ -444,7 +444,7 @@ jobs:
         # https://stackoverflow.com/questions/60963759/use-github-actions-to-create-a-tag-but-not-a-release#comment135891921_64479344
         # https://github.com/orgs/community/discussions/27028
         env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_UPDATE_GITHUB_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ matrix.current_version }}
           target_commitish: ${{ matrix.commit }}
